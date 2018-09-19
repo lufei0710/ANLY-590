@@ -1,0 +1,86 @@
+---
+title: "HWO Lufei Wang"
+output: html_document
+---
+
+
+Load Data
+```{r}
+hitters = read.csv("/Users/lufeiwang/Desktop/Hitters.csv")
+```
+
+
+1.1
+```{r}
+# Get rid of Categorical
+hitters = hitters[,!names(hitters) %in% c('League', 'Division', 'X', 'NewLeague')]
+hitters = hitters[!is.na(hitters$Salary),]
+x = model.matrix (Salary ~.,hitters )[,-1]
+y = hitters$Salary
+```
+
+
+
+```{r}
+library(glmnet)
+library(foreach)
+
+# Get a list of different lambdas
+grid =10^ seq(10,-2, length =100)
+# use cv to get best lambda
+cv =  cv.glmnet(x, y, alpha = 1)
+bestlam = cv$lambda.min
+bestlam
+
+# build model
+lasso = glmnet(x, y, alpha = 1, lambda = grid)
+coefs = predict(lasso, type = "coefficients", s = bestlam)[1:17,]
+coefs
+
+# plot the trajectory
+lasso.plot = glmnet(x, y, alpha = 1, lambda = grid)
+plot(lasso.plot)
+
+# The final three predictors left in the model are Years, Wlaks, and Hits
+
+# In the optimal model, there are 14 predictors left
+```
+
+
+1.2
+
+Ridge Regression
+```{r}
+set.seed(1)
+ridge = glmnet(x, y, lambda = grid, alpha = 0)
+
+# Use cv to find best lambda
+cv = cv.glmnet(x, y, alpha = 0)
+bestlam =cv$lambda.min
+bestlam
+out = glmnet(x, y, alpha = 0)
+
+# optimal coefficients
+coefs = predict(out ,type="coefficients",s=bestlam )[1:17 ,]
+coefs
+
+# Plot the coefficients trajectory
+plot(ridge)
+```
+
+
+Question 2:
+
+Regularization penalize linear model for being to complex, thus reduce the possibility of overfitting of the model - it reduces
+variance and improve bias.
+
+In ridge regression in the last question, we can see that some coefficients have been reduced to values that are close to zero,
+which reduced the importance of those variables so thet have less effect on the output, so the model it's getting simpler, because
+there are less variables that have large effects on the regression output.
+For lasso regression, it is ultimately a variable selection process. From the lasso result in the last question, some of the 
+coefficients are zero, so the variables are not in the model anymore, so the model is getting less complex. It can
+reduce variance and improve bias.
+
+Linear models and decision tree have high bias and low variance
+
+models like high-degree polynomial regression, neural networks, and ensemble methods.
